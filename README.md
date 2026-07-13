@@ -11,6 +11,20 @@ Quiz interativo baseado no treinamento corporativo **Automação de Processos �
 - Explicação exibida após cada resposta.
 - Conteúdo distribuído entre fundamentos, descoberta, documentação, arquitetura, desenvolvimento, testes e operação.
 
+## Executar localmente
+
+```bash
+npm install
+npm run dev
+```
+
+Para validar a versão de produção:
+
+```bash
+npm run build
+npm run preview
+```
+
 ## Estrutura
 
 ```text
@@ -18,11 +32,29 @@ data/
   questions.json
 docs/
   quiz-specification.md
+src/
+  assets/bridge-logo.png
+  main.js
+  styles.css
+index.html
+package.json
+render.yaml
 README.md
 ```
 
-## Próxima etapa
+## Funcionalidades
 
-Construir a aplicação web estilo Kahoot, com tela de abertura, perguntas em tela cheia, cronômetro, feedback, explicações, placar e pódio final, preparada para publicação no Render.
+- Identificação do participante.
+- Perguntas em tela cheia com cronômetro.
+- Respostas por clique, toque ou teclas 1–4/A–D.
+- Pontuação proporcional ao tempo restante.
+- Feedback e explicação após cada resposta.
+- Ranking local armazenado no navegador.
+- Pódio e resumo de desempenho.
+- Layout responsivo para projetor, computador e celular.
+
+## Publicar no Render
+
+O repositório inclui `render.yaml`. No Render, crie um novo **Blueprint**, conecte este repositório e publique a configuração detectada.
 
 > O arquivo `data/questions.json` é a fonte oficial do conteúdo do quiz.
