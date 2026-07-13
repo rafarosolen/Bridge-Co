@@ -34,7 +34,7 @@ function renderHost() {
   if (state.status === "lobby") {
     shell(`<section class="host-lobby glass-panel">
       <header class="host-header">${logo()}<span class="live-pill"><span></span> PAINEL DO HOST</span></header>
-      <div class="host-lobby-grid"><div><p class="eyebrow">ENTRADA AO VIVO</p><h1>Escaneie e<br><span>entre no jogo.</span></h1><p class="hero-description">Abra a câmera do celular, aponte para o código e informe seu nome.</p><button id="start" class="primary-button" ${state.playerCount ? "" : "disabled"}>Iniciar com ${state.playerCount} participante${state.playerCount === 1 ? "" : "s"}</button></div>
+      <div class="host-lobby-grid"><div><p class="eyebrow">ENTRADA AO VIVO</p><h1>Teste seu<br><span>conhecimento.</span></h1><p class="hero-description">Abra a câmera do celular, aponte para o código e informe seu nome.</p><button id="start" class="primary-button" ${state.playerCount ? "" : "disabled"}>Iniciar com ${state.playerCount} participante${state.playerCount === 1 ? "" : "s"}</button></div>
       <div class="qr-panel"><img src="/qr.png" alt="QR Code para entrar no quiz"><strong>bridge-automation-quiz.onrender.com</strong></div></div>
       <div class="player-strip">${state.players.length ? state.players.map(p => `<span>${escapeHtml(p.name)}</span>`).join("") : "<em>Aguardando participantes…</em>"}</div>
     </section>`, "host-screen");
@@ -48,7 +48,7 @@ function renderHost() {
   shell(`<section class="host-game">
     <header class="quiz-topbar">${logo()}<div class="progress-meta"><span>QUESTÃO ${state.questionIndex + 1} DE ${state.totalQuestions}</span><div class="progress-track"><div style="width:${((state.questionIndex + 1) / state.totalQuestions) * 100}%"></div></div></div><div class="score-box"><span>RESPOSTAS</span><strong>${answered}/${state.playerCount}</strong></div></header>
     <div class="host-question"><p class="eyebrow">${q.section}</p><h2>${q.question}</h2></div>
-    <div class="host-options">${q.options.map((o, i) => `<div class="host-option option-${i} ${state.revealed && i === q.answerIndex ? "winner" : ""}"><b>${LETTERS[i]}</b><span>${o}</span><strong>${counts[i]}</strong></div>`).join("")}</div>
+    <div class="host-options">${q.options.map((o, i) => `<div class="host-option option-${i} ${state.revealed && i === q.answerIndex ? "winner" : ""}"><b>${LETTERS[i]}</b><span>${o}</span>${state.revealed ? `<strong>${counts[i]}</strong>` : `<strong class="hidden-count" aria-label="Votos ocultos">•</strong>`}</div>`).join("")}</div>
     ${state.revealed ? `<div class="reveal-board"><div><span>ACERTARAM</span><strong>${state.players.filter(p => p.earned > 0).length}</strong></div><div class="answer-names">${state.players.filter(p => p.earned > 0).sort((a,b)=>b.earned-a.earned).map(p => `<span>✓ ${escapeHtml(p.name)} <b>+${p.earned}</b></span>`).join("") || "Ninguém acertou esta rodada"}</div><button id="next" class="primary-button">${state.questionIndex === state.totalQuestions - 1 ? "Ver pódio" : "Próxima pergunta"} →</button></div>` : `<div class="host-controls"><span>${answered === state.playerCount && state.playerCount ? "Todos responderam!" : "Respostas chegando em tempo real…"}</span><button id="reveal" class="primary-button">Revelar resposta</button></div>`}
   </section>`, "host-screen");
   document.querySelector("#reveal")?.addEventListener("click", () => socket.emit("host:reveal"));
@@ -56,7 +56,7 @@ function renderHost() {
 }
 
 function renderPodium(ranked) {
-  shell(`<section class="podium glass-panel"><header class="host-header">${logo()}<span class="live-pill"><span></span> RESULTADO FINAL</span></header><p class="eyebrow">PÓDIO DO TREINAMENTO</p><h1>Do manual ao <span>autônomo.</span></h1><div class="podium-list">${ranked.slice(0, 10).map((p, i) => `<div class="rank rank-${i + 1}"><b>${i + 1}</b><span>${escapeHtml(p.name)}<small>${p.correct}/${state.totalQuestions} acertos</small></span><strong>${p.score.toLocaleString("pt-BR")}</strong></div>`).join("")}</div><button id="reset" class="secondary-button">Nova turma</button></section>`, "host-screen result-screen");
+  shell(`<section class="podium glass-panel"><header class="host-header">${logo()}<span class="live-pill"><span></span> RESULTADO FINAL</span></header><p class="eyebrow">PÓDIO DO TREINAMENTO</p><h1>Treinamento de <span>Automação Bridge.</span></h1><div class="podium-list">${ranked.slice(0, 10).map((p, i) => `<div class="rank rank-${i + 1}"><b>${i + 1}</b><span>${escapeHtml(p.name)}<small>${p.correct}/${state.totalQuestions} acertos</small></span><strong>${p.score.toLocaleString("pt-BR")}</strong></div>`).join("")}</div><button id="reset" class="secondary-button">Nova turma</button></section>`, "host-screen result-screen");
   document.querySelector("#reset").addEventListener("click", () => socket.emit("host:reset"));
 }
 

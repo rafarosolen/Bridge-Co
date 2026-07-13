@@ -65,6 +65,7 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none !important;
 .host-options { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
 .host-option { min-height:125px; padding:20px; border-radius:20px; display:grid; grid-template-columns:64px 1fr 56px; align-items:center; gap:18px; box-shadow:0 14px 36px rgba(0,0,0,.24); }
 .host-option b { font-size:1.8rem; }.host-option span { font-size:clamp(1rem,1.6vw,1.35rem); font-weight:750; }.host-option strong { font-size:2.2rem; text-align:center; }
+.host-option .hidden-count { color:rgba(255,255,255,.34); font-size:1.5rem; }
 .host-option.winner { outline:5px solid white; transform:scale(1.015); }
 .host-controls,.reveal-board { display:flex; align-items:center; justify-content:space-between; gap:22px; padding:18px 22px; border:1px solid var(--border); border-radius:20px; background:rgba(255,255,255,.05); }
 .host-controls span { color:#c4d0e6; font-weight:700; }
