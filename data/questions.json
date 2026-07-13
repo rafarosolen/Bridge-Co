@@ -1,0 +1,159 @@
+{
+  "title": "Desafio Final — Automação de Processos",
+  "source": "Treinamento RPA Bridge.pptx",
+  "version": "1.0",
+  "settings": {
+    "defaultTimeLimitSeconds": 30,
+    "defaultPoints": 1000,
+    "shuffleQuestions": false,
+    "shuffleOptions": false,
+    "showExplanationAfterAnswer": true
+  },
+  "optionTheme": {
+    "A": { "color": "#E53935", "shape": "triangle" },
+    "B": { "color": "#1E88E5", "shape": "diamond" },
+    "C": { "color": "#FBC02D", "shape": "circle" },
+    "D": { "color": "#43A047", "shape": "square" }
+  },
+  "intro": {
+    "eyebrow": "DESAFIO FINAL",
+    "title": "10 perguntas. Uma jornada completa.",
+    "lines": [
+      "Escolha uma alternativa por questão.",
+      "Você terá 30 segundos para responder.",
+      "O gabarito comentado aparece ao final."
+    ]
+  },
+  "questions": [
+    {
+      "section": "QUESTÃO 01 · FUNDAMENTOS",
+      "question": "Qual afirmação diferencia corretamente RPA de um agente de IA?",
+      "options": [
+        "RPA aprende sozinho; o agente apenas repete comandos.",
+        "RPA segue regras explícitas; o agente persegue um objetivo e ajusta o plano.",
+        "RPA e agente são equivalentes, mudando apenas a licença.",
+        "Agentes só funcionam com telas; RPA só funciona com APIs."
+      ],
+      "answer": "B",
+      "answerIndex": 1,
+      "explanation": "RPA executa um fluxo determinístico; o agente raciocina sobre contexto, usa ferramentas e ajusta o caminho."
+    },
+    {
+      "section": "QUESTÃO 02 · FUNDAMENTOS",
+      "question": "Qual processo é o melhor candidato para RPA?",
+      "options": [
+        "Dez análises mensais que exigem julgamento subjetivo.",
+        "Processo sem padrão, executado de um jeito por analista.",
+        "2.000 faturas por mês, regras claras, telas estáveis e poucas exceções.",
+        "Sistema que será substituído nos próximos seis meses."
+      ],
+      "answer": "C",
+      "answerIndex": 2,
+      "explanation": "Alto volume, baixa variação, regras claras e estabilidade formam um forte caso de automação."
+    },
+    {
+      "section": "QUESTÃO 03 · FUNDAMENTOS",
+      "question": "O que melhor descreve Hyperautomation?",
+      "options": [
+        "A orquestração de RPA, IA, OCR, APIs, mining e workflows em torno do processo.",
+        "Um robô RPA maior, capaz de executar mais telas ao mesmo tempo.",
+        "A substituição obrigatória de todos os sistemas legados.",
+        "O uso exclusivo de IA generativa para qualquer processo."
+      ],
+      "answer": "A",
+      "answerIndex": 0,
+      "explanation": "Hyperautomation combina tecnologias complementares; não é uma ferramenta isolada."
+    },
+    {
+      "section": "QUESTÃO 04 · DESCOBERTA",
+      "question": "Durante o levantamento, analistas executam o mesmo processo com regras diferentes. O que fazer?",
+      "options": [
+        "Automatizar a versão do analista mais experiente.",
+        "Padronizar o TO BE e validar uma regra única com o dono do processo.",
+        "Criar um robô diferente para cada analista.",
+        "Ignorar as diferenças e tratar tudo após o go-live."
+      ],
+      "answer": "B",
+      "answerIndex": 1,
+      "explanation": "O AS IS deve revelar as variações; o TO BE simplifica e padroniza antes da automação."
+    },
+    {
+      "section": "QUESTÃO 05 · DOCUMENTAÇÃO",
+      "question": "Quem deve assinar o PDD e qual é o objetivo dessa assinatura?",
+      "options": [
+        "O desenvolvedor, para aprovar a arquitetura técnica.",
+        "O QA, para confirmar que todos os testes passaram.",
+        "A sustentação, para assumir os SLAs de produção.",
+        "O dono do processo, para validar fluxo, regras, exceções e escopo de negócio."
+      ],
+      "answer": "D",
+      "answerIndex": 3,
+      "explanation": "O PDD descreve o que o processo faz; por isso, seu sign-off pertence ao dono do processo."
+    },
+    {
+      "section": "QUESTÃO 06 · PLATAFORMA",
+      "question": "Se o sistema possui uma API estável, qual abordagem deve ser avaliada primeiro?",
+      "options": [
+        "Integração direta por API, usando Python, Camunda ou iPaaS.",
+        "RPA por tela, independentemente do custo de manutenção.",
+        "Agente de IA com acesso irrestrito ao sistema.",
+        "Macro local sem monitoramento nem governança."
+      ],
+      "answer": "A",
+      "answerIndex": 0,
+      "explanation": "Uma API estável costuma oferecer integração mais robusta do que a automação da interface gráfica."
+    },
+    {
+      "section": "QUESTÃO 07 · ARQUITETURA",
+      "question": "Por que o padrão Dispatcher & Performer escala melhor?",
+      "options": [
+        "Porque elimina a necessidade de filas e de orquestração.",
+        "Porque concentra todas as transações em um único robô monolítico.",
+        "Porque separa a criação dos itens da execução e permite vários Performers em paralelo.",
+        "Porque transforma automaticamente exceções de negócio em sucesso."
+      ],
+      "answer": "C",
+      "answerIndex": 2,
+      "explanation": "A fila desacopla preparação e execução, permitindo escala horizontal e tratamento por item."
+    },
+    {
+      "section": "QUESTÃO 08 · DESENVOLVIMENTO",
+      "question": "O SAP apresentou timeout, mas voltou a responder depois. Como classificar e tratar?",
+      "options": [
+        "Business Exception, com envio direto para fila humana.",
+        "Business Exception, repetindo indefinidamente.",
+        "System Exception, sem retry e com encerramento imediato.",
+        "System Exception, com retry automático limitado e alerta após esgotar as tentativas."
+      ],
+      "answer": "D",
+      "answerIndex": 3,
+      "explanation": "Timeout é falha de ambiente e pode ser transitório; retry limitado é apropriado."
+    },
+    {
+      "section": "QUESTÃO 09 · TESTES",
+      "question": "Quem aprova a UAT e com base em quê?",
+      "options": [
+        "O desenvolvedor, com base na ausência de erros no código.",
+        "O dono do processo, com base nos critérios de aceite definidos.",
+        "O arquiteto, com base apenas no desenho da solução.",
+        "O N1, com base no runbook de produção."
+      ],
+      "answer": "B",
+      "answerIndex": 1,
+      "explanation": "UAT é validação do negócio; o responsável é quem assinou o PDD e conhece os critérios de aceite."
+    },
+    {
+      "section": "QUESTÃO 10 · OPERAÇÃO",
+      "question": "Qual conjunto precisa estar pronto antes do go-live?",
+      "options": [
+        "Somente o código publicado e uma agenda definida.",
+        "Apenas o acesso à produção e o contato do desenvolvedor.",
+        "UAT aprovada, rollback ensaiado, monitoramento, alertas e processo manual de contingência.",
+        "Somente um piloto com todo o volume já no primeiro dia."
+      ],
+      "answer": "C",
+      "answerIndex": 2,
+      "explanation": "O go-live seguro combina aprovação, observabilidade, contingência e reversão planejada."
+    }
+  ]
+}
