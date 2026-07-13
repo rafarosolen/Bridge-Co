@@ -1,390 +1,68 @@
-import quizData from "../data/questions.json";
+import { io } from "socket.io-client";
 import bridgeLogo from "./assets/bridge-logo.png";
 import "./styles.css";
 
+const socket = io();
 const app = document.querySelector("#app");
+const hostMode = new URLSearchParams(location.search).has("host");
 const LETTERS = ["A", "B", "C", "D"];
-const SHAPES = ["triangle", "diamond", "circle", "square"];
-const STORAGE_KEY = "bridge-automation-quiz-ranking-v1";
+let state = null;
+let playerId = sessionStorage.getItem("bridge-player-id");
 
-const state = {
-  participant: "",
-  questionIndex: 0,
-  score: 0,
-  correct: 0,
-  answers: [],
-  timerId: null,
-  startedAt: 0,
-  timeLeft: quizData.settings.defaultTimeLimitSeconds,
-  locked: false,
-  feedbackVisible: false,
-};
+const escapeHtml = (value = "") => value.replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c]));
+const logo = () => `<img class="brand-logo" src="${bridgeLogo}" alt="Bridge & Co">`;
+const shell = (content, cls = "") => { app.innerHTML = `<main class="app-shell ${cls}"><div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>${content}</main>`; };
 
-function logoMarkup() {
-  return `<img class="brand-logo" src="${bridgeLogo}" alt="Bridge & Co" />`;
+socket.on("connect", () => { if (playerId) playerId = socket.id; });
+socket.on("game:state", (next) => { state = next; render(); });
+
+function render() {
+  if (!state) return;
+  hostMode ? renderHost() : renderPlayer();
 }
 
-function shell(content, className = "") {
-  app.innerHTML = `
-    <main class="app-shell ${className}">
-      <div class="ambient ambient-one"></div>
-      <div class="ambient ambient-two"></div>
-      ${content}
-    </main>
-  `;
-}
-
-function getRanking() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveRanking(result) {
-  const ranking = [...getRanking(), result]
-    .sort((a, b) => b.score - a.score || b.correct - a.correct || a.duration - b.duration)
-    .slice(0, 20);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(ranking));
-  return ranking;
-}
-
-function resetQuiz() {
-  clearTimer();
-  state.questionIndex = 0;
-  state.score = 0;
-  state.correct = 0;
-  state.answers = [];
-  state.locked = false;
-  state.feedbackVisible = false;
-}
-
-function renderHome() {
-  const ranking = getRanking();
-  const best = ranking[0];
-
-  shell(`
-    <section class="home-card glass-panel">
-      <header class="home-header">
-        ${logoMarkup()}
-        <span class="live-pill"><span></span> treinamento interativo</span>
-      </header>
-
-      <div class="hero-copy">
-        <p class="eyebrow">DESAFIO FINAL</p>
-        <h1>Do manual ao <span>autônomo.</span></h1>
-        <p class="hero-description">
-          Dez perguntas para testar sua visão de processo, arquitetura, desenvolvimento e operação.
-        </p>
-      </div>
-
-      <form class="join-card" id="join-form">
-        <label for="participant-name">Como devemos chamar você?</label>
-        <div class="join-row">
-          <input
-            id="participant-name"
-            name="participant"
-            maxlength="32"
-            autocomplete="name"
-            placeholder="Digite seu nome"
-            required
-          />
-          <button class="primary-button" type="submit">
-            Começar desafio <span aria-hidden="true">→</span>
-          </button>
-        </div>
-        <p class="helper-text">10 questões · 30 segundos cada · até 10.000 pontos</p>
-      </form>
-
-      <div class="home-stats" aria-label="Informações do quiz">
-        <div><strong>10</strong><span>perguntas</span></div>
-        <div><strong>04</strong><span>alternativas</span></div>
-        <div><strong>30s</strong><span>por rodada</span></div>
-        <div><strong>${best ? best.score.toLocaleString("pt-BR") : "—"}</strong><span>recorde local</span></div>
-      </div>
-    </section>
-  `, "home-screen");
-
-  document.querySelector("#join-form").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const input = document.querySelector("#participant-name");
-    const name = input.value.trim();
-    if (!name) {
-      input.focus();
-      return;
-    }
-    state.participant = name;
-    startQuiz();
-  });
-}
-
-function startQuiz() {
-  resetQuiz();
-  state.startedAt = Date.now();
-  renderQuestion();
-}
-
-function renderQuestion() {
-  clearTimer();
-  state.locked = false;
-  state.feedbackVisible = false;
-  state.timeLeft = quizData.settings.defaultTimeLimitSeconds;
-  const question = quizData.questions[state.questionIndex];
-  const progress = ((state.questionIndex + 1) / quizData.questions.length) * 100;
-
-  shell(`
-    <section class="quiz-layout">
-      <header class="quiz-topbar">
-        ${logoMarkup()}
-        <div class="progress-meta">
-          <span>Questão ${String(state.questionIndex + 1).padStart(2, "0")} de ${quizData.questions.length}</span>
-          <div class="progress-track" aria-hidden="true">
-            <div style="width: ${progress}%"></div>
-          </div>
-        </div>
-        <div class="score-box">
-          <span>PONTOS</span>
-          <strong id="score-value">${state.score.toLocaleString("pt-BR")}</strong>
-        </div>
-      </header>
-
-      <div class="question-stage">
-        <div class="question-heading">
-          <p class="eyebrow">${question.section}</p>
-          <h2>${question.question}</h2>
-        </div>
-
-        <div class="timer-card" aria-label="Tempo restante">
-          <div class="timer-ring" id="timer-ring">
-            <span id="timer-value">${state.timeLeft}</span>
-            <small>seg</small>
-          </div>
-        </div>
-
-        <div class="options-grid" role="group" aria-label="Alternativas">
-          ${question.options.map((option, index) => `
-            <button class="option-card option-${index}" data-option="${index}" type="button">
-              <span class="option-symbol"><i class="shape ${SHAPES[index]}"></i></span>
-              <span class="option-copy">
-                <small>${LETTERS[index]}</small>
-                <strong>${option}</strong>
-              </span>
-              <kbd>${index + 1}</kbd>
-            </button>
-          `).join("")}
-        </div>
-
-        <div class="timer-track" aria-hidden="true">
-          <div id="timer-progress"></div>
-        </div>
-      </div>
-
-      <footer class="quiz-footer">
-        <span>Participante: <strong>${escapeHtml(state.participant)}</strong></span>
-        <span>Use as teclas <kbd>1</kbd>–<kbd>4</kbd> para responder</span>
-      </footer>
-      <div id="feedback-root"></div>
-    </section>
-  `, "quiz-screen");
-
-  document.querySelectorAll("[data-option]").forEach((button) => {
-    button.addEventListener("click", () => resolveAnswer(Number(button.dataset.option)));
-  });
-
-  state.questionStartedAt = performance.now();
-  state.timerId = window.setInterval(updateTimer, 100);
-  updateTimer();
-}
-
-function updateTimer() {
-  if (state.locked) return;
-  const limit = quizData.settings.defaultTimeLimitSeconds;
-  const elapsed = (performance.now() - state.questionStartedAt) / 1000;
-  state.timeLeft = Math.max(0, limit - elapsed);
-  const seconds = Math.ceil(state.timeLeft);
-  const ratio = state.timeLeft / limit;
-  const timerValue = document.querySelector("#timer-value");
-  const timerProgress = document.querySelector("#timer-progress");
-  const timerRing = document.querySelector("#timer-ring");
-
-  if (timerValue) timerValue.textContent = seconds;
-  if (timerProgress) timerProgress.style.width = `${ratio * 100}%`;
-  if (timerRing) {
-    timerRing.style.setProperty("--timer-angle", `${ratio * 360}deg`);
-    timerRing.classList.toggle("timer-warning", state.timeLeft <= 8);
-  }
-
-  if (state.timeLeft <= 0) resolveAnswer(-1);
-}
-
-function resolveAnswer(selectedIndex) {
-  if (state.locked) return;
-  state.locked = true;
-  clearTimer();
-
-  const question = quizData.questions[state.questionIndex];
-  const isCorrect = selectedIndex === question.answerIndex;
-  const limit = quizData.settings.defaultTimeLimitSeconds;
-  const speedRatio = Math.max(0, state.timeLeft / limit);
-  const earned = isCorrect
-    ? Math.round(quizData.settings.defaultPoints * (0.5 + speedRatio * 0.5))
-    : 0;
-
-  state.score += earned;
-  if (isCorrect) state.correct += 1;
-  state.answers.push({
-    question: state.questionIndex,
-    selectedIndex,
-    correct: isCorrect,
-    earned,
-    responseTime: limit - state.timeLeft,
-  });
-
-  document.querySelectorAll("[data-option]").forEach((button) => {
-    const index = Number(button.dataset.option);
-    button.disabled = true;
-    if (index === question.answerIndex) button.classList.add("is-correct");
-    if (index === selectedIndex && !isCorrect) button.classList.add("is-wrong");
-    if (index !== question.answerIndex && index !== selectedIndex) button.classList.add("is-muted");
-  });
-
-  document.querySelector("#score-value").textContent = state.score.toLocaleString("pt-BR");
-  renderFeedback({ question, isCorrect, earned, timedOut: selectedIndex < 0 });
-}
-
-function renderFeedback({ question, isCorrect, earned, timedOut }) {
-  state.feedbackVisible = true;
-  const isLast = state.questionIndex === quizData.questions.length - 1;
-  const root = document.querySelector("#feedback-root");
-  root.innerHTML = `
-    <div class="feedback-backdrop"></div>
-    <aside class="feedback-panel ${isCorrect ? "feedback-correct" : "feedback-wrong"}" aria-live="polite">
-      <div class="feedback-status">
-        <span class="feedback-icon">${isCorrect ? "✓" : timedOut ? "⌛" : "×"}</span>
-        <div>
-          <p>${isCorrect ? "RESPOSTA CORRETA" : timedOut ? "TEMPO ESGOTADO" : "QUASE LÁ"}</p>
-          <h3>${isCorrect ? `+${earned.toLocaleString("pt-BR")} pontos` : `A resposta era ${question.answer}`}</h3>
-        </div>
-      </div>
-      <p class="feedback-explanation">${question.explanation}</p>
-      <button class="primary-button" id="continue-button" type="button">
-        ${isLast ? "Ver meu resultado" : "Próxima pergunta"} <span aria-hidden="true">→</span>
-      </button>
-    </aside>
-  `;
-  window.setTimeout(() => root.classList.add("is-visible"), 20);
-  document.querySelector("#continue-button").addEventListener("click", continueQuiz);
-}
-
-function continueQuiz() {
-  if (state.questionIndex < quizData.questions.length - 1) {
-    state.questionIndex += 1;
-    renderQuestion();
-  } else {
-    finishQuiz();
-  }
-}
-
-function finishQuiz() {
-  clearTimer();
-  const duration = Math.round((Date.now() - state.startedAt) / 1000);
-  const result = {
-    name: state.participant,
-    score: state.score,
-    correct: state.correct,
-    total: quizData.questions.length,
-    duration,
-    createdAt: new Date().toISOString(),
-  };
-  const ranking = saveRanking(result);
-  const position = ranking.findIndex((entry) => entry.createdAt === result.createdAt) + 1;
-  renderResult(result, ranking, position);
-}
-
-function renderResult(result, ranking, position) {
-  const accuracy = Math.round((result.correct / result.total) * 100);
-  const topThree = ranking.slice(0, 3);
-  const medals = ["1º", "2º", "3º"];
-
-  shell(`
-    <section class="result-card glass-panel">
-      <header class="result-header">
-        ${logoMarkup()}
-        <span class="live-pill"><span></span> desafio concluído</span>
-      </header>
-
-      <div class="result-hero">
-        <div class="result-badge">${position === 1 ? "★" : position}</div>
-        <p class="eyebrow">RESULTADO FINAL</p>
-        <h1>Mandou bem, <span>${escapeHtml(result.name)}</span>.</h1>
-        <p>Você concluiu a jornada do processo manual à operação automatizada.</p>
-      </div>
-
-      <div class="result-metrics">
-        <div><span>Pontuação</span><strong>${result.score.toLocaleString("pt-BR")}</strong></div>
-        <div><span>Acertos</span><strong>${result.correct}/${result.total}</strong></div>
-        <div><span>Aproveitamento</span><strong>${accuracy}%</strong></div>
-        <div><span>Posição local</span><strong>#${position}</strong></div>
-      </div>
-
-      <section class="leaderboard">
-        <div class="section-title">
-          <div><p class="eyebrow">RANKING LOCAL</p><h2>Pódio da sessão</h2></div>
-          <button class="text-button" id="clear-ranking" type="button">Limpar ranking</button>
-        </div>
-        <div class="leaderboard-list">
-          ${topThree.map((entry, index) => `
-            <div class="leader-row ${entry.createdAt === result.createdAt ? "is-current" : ""}">
-              <span class="medal medal-${index + 1}">${medals[index]}</span>
-              <strong>${escapeHtml(entry.name)}</strong>
-              <span>${entry.correct}/${entry.total} acertos</span>
-              <b>${entry.score.toLocaleString("pt-BR")}</b>
-            </div>
-          `).join("") || `<p class="empty-ranking">Ainda não há resultados nesta sessão.</p>`}
-        </div>
-      </section>
-
-      <div class="result-actions">
-        <button class="secondary-button" id="home-button" type="button">Voltar ao início</button>
-        <button class="primary-button" id="retry-button" type="button">Jogar novamente <span>↻</span></button>
-      </div>
-    </section>
-  `, "result-screen");
-
-  document.querySelector("#retry-button").addEventListener("click", startQuiz);
-  document.querySelector("#home-button").addEventListener("click", renderHome);
-  document.querySelector("#clear-ranking").addEventListener("click", () => {
-    localStorage.removeItem(STORAGE_KEY);
-    renderHome();
-  });
-}
-
-function clearTimer() {
-  if (state.timerId) window.clearInterval(state.timerId);
-  state.timerId = null;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-document.addEventListener("keydown", (event) => {
-  if (state.feedbackVisible && event.key === "Enter") {
-    document.querySelector("#continue-button")?.click();
+function renderHost() {
+  const ranked = [...state.players].sort((a, b) => b.score - a.score || b.correct - a.correct);
+  if (state.status === "lobby") {
+    shell(`<section class="host-lobby glass-panel">
+      <header class="host-header">${logo()}<span class="live-pill"><span></span> PAINEL DO HOST</span></header>
+      <div class="host-lobby-grid"><div><p class="eyebrow">ENTRADA AO VIVO</p><h1>Escaneie e<br><span>entre no jogo.</span></h1><p class="hero-description">Abra a câmera do celular, aponte para o código e informe seu nome.</p><button id="start" class="primary-button" ${state.playerCount ? "" : "disabled"}>Iniciar com ${state.playerCount} participante${state.playerCount === 1 ? "" : "s"}</button></div>
+      <div class="qr-panel"><img src="/qr.png" alt="QR Code para entrar no quiz"><strong>bridge-automation-quiz.onrender.com</strong></div></div>
+      <div class="player-strip">${state.players.length ? state.players.map(p => `<span>${escapeHtml(p.name)}</span>`).join("") : "<em>Aguardando participantes…</em>"}</div>
+    </section>`, "host-screen");
+    document.querySelector("#start")?.addEventListener("click", () => socket.emit("host:start"));
     return;
   }
-  if (state.locked || !document.querySelector(".quiz-screen")) return;
-  const key = event.key.toUpperCase();
-  const index = ["1", "2", "3", "4"].indexOf(key) >= 0
-    ? Number(key) - 1
-    : LETTERS.indexOf(key);
-  if (index >= 0) document.querySelector(`[data-option="${index}"]`)?.click();
-});
+  if (state.status === "finished") return renderPodium(ranked);
+  const q = state.question;
+  const answered = state.players.filter(p => p.answer !== null).length;
+  const counts = q.options.map((_, i) => state.players.filter(p => p.answer === i).length);
+  shell(`<section class="host-game">
+    <header class="quiz-topbar">${logo()}<div class="progress-meta"><span>QUESTÃO ${state.questionIndex + 1} DE ${state.totalQuestions}</span><div class="progress-track"><div style="width:${((state.questionIndex + 1) / state.totalQuestions) * 100}%"></div></div></div><div class="score-box"><span>RESPOSTAS</span><strong>${answered}/${state.playerCount}</strong></div></header>
+    <div class="host-question"><p class="eyebrow">${q.section}</p><h2>${q.question}</h2></div>
+    <div class="host-options">${q.options.map((o, i) => `<div class="host-option option-${i} ${state.revealed && i === q.answerIndex ? "winner" : ""}"><b>${LETTERS[i]}</b><span>${o}</span><strong>${counts[i]}</strong></div>`).join("")}</div>
+    ${state.revealed ? `<div class="reveal-board"><div><span>ACERTARAM</span><strong>${state.players.filter(p => p.earned > 0).length}</strong></div><div class="answer-names">${state.players.filter(p => p.earned > 0).sort((a,b)=>b.earned-a.earned).map(p => `<span>✓ ${escapeHtml(p.name)} <b>+${p.earned}</b></span>`).join("") || "Ninguém acertou esta rodada"}</div><button id="next" class="primary-button">${state.questionIndex === state.totalQuestions - 1 ? "Ver pódio" : "Próxima pergunta"} →</button></div>` : `<div class="host-controls"><span>${answered === state.playerCount && state.playerCount ? "Todos responderam!" : "Respostas chegando em tempo real…"}</span><button id="reveal" class="primary-button">Revelar resposta</button></div>`}
+  </section>`, "host-screen");
+  document.querySelector("#reveal")?.addEventListener("click", () => socket.emit("host:reveal"));
+  document.querySelector("#next")?.addEventListener("click", () => socket.emit("host:next"));
+}
 
-renderHome();
+function renderPodium(ranked) {
+  shell(`<section class="podium glass-panel"><header class="host-header">${logo()}<span class="live-pill"><span></span> RESULTADO FINAL</span></header><p class="eyebrow">PÓDIO DO TREINAMENTO</p><h1>Do manual ao <span>autônomo.</span></h1><div class="podium-list">${ranked.slice(0, 10).map((p, i) => `<div class="rank rank-${i + 1}"><b>${i + 1}</b><span>${escapeHtml(p.name)}<small>${p.correct}/${state.totalQuestions} acertos</small></span><strong>${p.score.toLocaleString("pt-BR")}</strong></div>`).join("")}</div><button id="reset" class="secondary-button">Nova turma</button></section>`, "host-screen result-screen");
+  document.querySelector("#reset").addEventListener("click", () => socket.emit("host:reset"));
+}
+
+function renderPlayer() {
+  const me = state.players.find(p => p.id === socket.id);
+  if (!me) {
+    shell(`<section class="mobile-card glass-panel">${logo()}<p class="eyebrow">TREINAMENTO INTERATIVO</p><h1>Entre no desafio.</h1><form id="join"><input id="name" maxlength="32" placeholder="Digite seu nome" required><button class="primary-button">Entrar no jogo →</button></form><p class="helper-text">Aguarde o host iniciar a primeira pergunta.</p></section>`, "player-screen");
+    document.querySelector("#join").addEventListener("submit", (e) => { e.preventDefault(); socket.emit("player:join", document.querySelector("#name").value, (r) => { if (r.ok) { playerId = r.id; sessionStorage.setItem("bridge-player-id", r.id); } }); });
+    return;
+  }
+  if (state.status === "lobby") return shell(`<section class="mobile-card glass-panel centered">${logo()}<div class="waiting-pulse"></div><h1>Você está dentro!</h1><p>Olá, <strong>${escapeHtml(me.name)}</strong>. Olhe para a tela principal.</p></section>`, "player-screen");
+  if (state.status === "finished") return shell(`<section class="mobile-card glass-panel centered">${logo()}<p class="eyebrow">RESULTADO FINAL</p><h1>${me.score.toLocaleString("pt-BR")} pontos</h1><p>${me.correct} de ${state.totalQuestions} respostas corretas.</p></section>`, "player-screen");
+  const q = state.question;
+  if (state.revealed) return shell(`<section class="mobile-card glass-panel centered result-${me.earned ? "correct" : "wrong"}">${logo()}<div class="result-icon">${me.earned ? "✓" : "×"}</div><h1>${me.earned ? "Você acertou!" : "Não foi desta vez"}</h1><strong class="earned">${me.earned ? `+${me.earned} pontos` : `${me.score.toLocaleString("pt-BR")} pontos`}</strong><p>${q.explanation}</p></section>`, "player-screen");
+  shell(`<section class="mobile-quiz"><header>${logo()}<span>${me.score.toLocaleString("pt-BR")} pts</span></header><p class="eyebrow">QUESTÃO ${state.questionIndex + 1}/${state.totalQuestions}</p><h2>${q.question}</h2>${me.answer !== null ? `<div class="answered"><div class="waiting-pulse"></div><h3>Resposta enviada!</h3><p>Olhe para a tela principal.</p></div>` : `<div class="mobile-options">${q.options.map((o, i) => `<button data-answer="${i}" class="option-${i}"><b>${LETTERS[i]}</b><span>${o}</span></button>`).join("")}</div>`}</section>`, "player-screen");
+  document.querySelectorAll("[data-answer]").forEach(btn => btn.addEventListener("click", () => socket.emit("player:answer", Number(btn.dataset.answer))));
+}

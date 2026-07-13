@@ -1,9 +1,10 @@
 services:
   - type: web
     name: bridge-automation-quiz
-    runtime: static
+    runtime: node
     buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
+    startCommand: npm start
+    healthCheckPath: /health
     autoDeployTrigger: commit
     previews:
       generation: automatic
