@@ -8,12 +8,20 @@ const hostMode = new URLSearchParams(location.search).has("host");
 const LETTERS = ["A", "B", "C", "D"];
 let state = null;
 let playerId = sessionStorage.getItem("bridge-player-id");
+let connectionTimer = null;
 
 const escapeHtml = (value = "") => value.replace(/[&<>'"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[c]));
 const logo = () => `<img class="brand-logo" src="${bridgeLogo}" alt="Bridge & Co">`;
 const shell = (content, cls = "") => { app.innerHTML = `<main class="app-shell ${cls}"><div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>${content}</main>`; };
 
+function renderConnectionError() {
+  if (state) return;
+  shell(`<section class="mobile-card glass-panel centered">${logo()}<p class="eyebrow">CONEXÃO MULTIPLAYER</p><h1>Servidor indisponível.</h1><p>O quiz foi publicado como site estático. Configure-o no Render como <strong>Web Service · Node</strong> para ativar o painel do host e os celulares.</p><button class="primary-button" onclick="location.reload()">Tentar novamente</button></section>`, "player-screen");
+}
+
+connectionTimer = window.setTimeout(renderConnectionError, 5000);
 socket.on("connect", () => { if (playerId) playerId = socket.id; });
+socket.on("connect_error", () => { if (!connectionTimer) connectionTimer = window.setTimeout(renderConnectionError, 1200); });
 socket.on("game:state", (next) => { state = next; render(); });
 
 function render() {
