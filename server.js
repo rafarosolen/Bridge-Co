@@ -247,6 +247,12 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
 
   try {
+    /* Health check (usado pelo Render para saber se o serviço está no ar) */
+    if (req.method === 'GET' && (p === '/health' || p === '/healthz')) {
+      res.writeHead(200, { 'Content-Type': 'text/plain' });
+      return res.end('ok');
+    }
+
     /* Páginas */
     if (req.method === 'GET' && (p === '/' || p === '/index.html')) return serveFile(res, 'player.html');
     if (req.method === 'GET' && p === '/host') return serveFile(res, 'host.html');
