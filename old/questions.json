@@ -1,0 +1,134 @@
+[
+  {
+    "text": "Antes de propor um plano de ação, um profissional revisa as informações recebidas, identifica possíveis vieses e verifica se os números realmente sustentam as conclusões apresentadas. Qual a principal competência que está sendo aplicada?",
+    "options": [
+      "Pensamento Crítico Baseado em Dados",
+      "Capricho",
+      "Pensamento Orientado para Soluções",
+      "Análise Estruturada de Evidências"
+    ],
+    "correct": 0,
+    "duration": 30
+  },
+  {
+    "text": "Durante um projeto, uma profissional percebe que uma decisão do time pode gerar impacto negativo no cliente. Mesmo sendo um tema sensível, ela expõe sua opinião de forma direta, respeitosa e baseada em argumentos claros. Qual competência comportamental está sendo aplicada?",
+    "options": [
+      "Colaboração Efetiva",
+      "Comunicação Estratégica",
+      "Assertividade",
+      "Comunicação Eficaz"
+    ],
+    "correct": 2,
+    "duration": 30
+  },
+  {
+    "text": "Diante de um problema inesperado no projeto, um profissional evita apenas reportar a situação e já apresenta alternativas viáveis para mitigar o impacto, mesmo antes de qualquer direcionamento formal. Qual competência organizacional está mais diretamente sendo aplicada?",
+    "options": [
+      "Capricho",
+      "Proatividade Aplicada",
+      "Pensamento Orientado para Soluções",
+      "Comunicação Eficaz"
+    ],
+    "correct": 2,
+    "duration": 30
+  },
+  {
+    "text": "O Manifesto afirma que “QUALIDADE é grátis”. Baseado nisso e mesmo com o prazo apertado, um profissional decide revisar minuciosamente números, referências cruzadas e pequenos detalhes visuais antes da entrega final. Qual competência organizacional está mais diretamente relacionada a esse comportamento?",
+    "options": [
+      "Pensamento Lean",
+      "Capricho",
+      "Pensamento Orientado para Soluções",
+      "Excelência Operacional Aplicada"
+    ],
+    "correct": 1,
+    "duration": 30
+  },
+  {
+    "text": "Qual é o tema da roupa da Brigitte na atual tela de login dos notebooks da Bridge?",
+    "options": [
+      "Festa da Bridge",
+      "Carnaval",
+      "Páscoa",
+      "Brigitte Android"
+    ],
+    "correct": 1,
+    "duration": 20
+  },
+  {
+    "text": "Durante uma discussão sobre um candidato interno, surgem comentários no time relacionados a aspectos pessoais que não têm relação com desempenho. Mesmo com pressão para concluir rapidamente a decisão, o gestor interrompe a conversa e redireciona a avaliação para critérios adequados. Qual competência comportamental está mais diretamente sendo aplicada?",
+    "options": [
+      "Respeito",
+      "Integridade e Conformidade",
+      "Ética Organizacional Ativa",
+      "Colaboração Efetiva"
+    ],
+    "correct": 1,
+    "duration": 30
+  },
+  {
+    "text": "Qual frente do portfólio da Bridge é responsável por preparar, implantar e operar a arquitetura tecnológica de analytics de uma empresa, garantindo governança, confiabilidade, desempenho e segurança dos dados?",
+    "options": [
+      "Inteligência Artificial",
+      "Estratégia Digital",
+      "Data & Analytics",
+      "Engenharia de Dados"
+    ],
+    "correct": 2,
+    "duration": 25
+  },
+  {
+    "text": "Uma empresa deseja digitalizar processos operacionais, combinando automação, inteligência artificial e engenharia de processos para aumentar eficiência e competitividade, além de definir a arquitetura tecnológica mais adequada para essa digitalização. Qual frente do portfólio da Bridge atende mais diretamente essa necessidade?",
+    "options": [
+      "Estratégia Digital",
+      "Inteligência Artificial",
+      "Robotic Process Automation (RPA)",
+      "Automações Inteligentes"
+    ],
+    "correct": 3,
+    "duration": 30
+  },
+  {
+    "text": "Uma empresa busca decidir o momento ideal para adotar tecnologias como Inteligência Artificial, uso estratégico de dados e automações, projetando como essas inovações podem redefinir sua forma de competir no mercado e antecipar o futuro do seu modelo de negócio — sem comprometer os resultados atuais. Qual frente do portfólio da Bridge atende mais diretamente essa necessidade?",
+    "options": [
+      "IA, Dados e RPA",
+      "Estratégia Digital",
+      "Governança Tecnológica",
+      "Planejamento de Transformação Digital"
+    ],
+    "correct": 1,
+    "duration": 30
+  },
+  {
+    "text": "Em um projeto desafiador, um profissional percebe que não domina completamente determinado tema técnico, mas decide seguir sozinho para não incomodar a equipe do projeto. O resultado final apresenta falhas que poderiam ter sido evitadas. Qual competência comportamental ele deixou de aplicar?",
+    "options": [
+      "Autodesenvolvimento",
+      "Comunicação Eficaz",
+      "Colaboração Efetiva",
+      "Pensamento Orientado para Soluções"
+    ],
+    "correct": 2,
+    "duration": 30
+  },
+  {
+    "text": "Quais são os valores formais da Bridge?",
+    "options": [
+      "Excelência no conhecimento; Transparência e Integridade; Criação de valor para o cliente; Respeito; Colaboração",
+      "Transparência, Integridade e Ética; Excelência no conhecimento; Criação de valor para o cliente; Respeito; Espírito de Equipe",
+      "Respeito; Criação de valor para o cliente; Excelência no conhecimento; Transparência, Integridade e Ética; Colaboração",
+      "Excelência no conhecimento; Transparência e Ética; Criação de valor para o cliente; Respeito; Colaboração"
+    ],
+    "correct": 2,
+    "duration": 35
+  },
+  {
+    "text": "Qual é a data de aniversário da Bridge & Co.?",
+    "options": [
+      "07/03/2018",
+      "14/04/2015",
+      "21/05/2012",
+      "05/03/2010"
+    ],
+    "correct": 3,
+    "duration": 20
+  }
+]
