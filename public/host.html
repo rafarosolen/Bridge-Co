@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz ao Vivo — Telão</title>
+<script src="/lib/qrcode.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#46178f;min-height:100vh;color:#fff}
+#app{max-width:1100px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:24px}
+.center{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px}
+h1{font-size:2.4rem}
+h2{font-size:1.8rem}
+.sub{opacity:.85;font-size:1.1rem}
+.lobby{flex:1;display:flex;gap:40px;align-items:center;justify-content:center;flex-wrap:wrap}
+.qrbox{background:#fff;padding:18px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:10px;color:#222}
+.qrbox svg,.qrbox img{width:280px;height:280px}
+.url{font-size:1.3rem;font-weight:700;color:#46178f}
+.players{max-width:440px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chip{background:rgba(255,255,255,.18);padding:8px 16px;border-radius:999px;font-weight:600;font-size:1.05rem}
+.count{font-size:1.4rem;font-weight:700}
+.controls{display:flex;gap:12px;justify-content:center;padding:18px 0 0}
+button.primary{padding:14px 34px;border:none;border-radius:10px;font-size:1.2rem;font-weight:700;background:#fff;color:#46178f;cursor:pointer}
+button.primary:hover{transform:scale(1.03)}
+button.ghost{padding:14px 20px;border:1px solid rgba(255,255,255,.5);border-radius:10px;font-size:1rem;background:transparent;color:#fff;cursor:pointer}
+.topbar{display:flex;justify-content:space-between;align-items:center;font-size:1.2rem;font-weight:700;margin-bottom:12px}
+.timer{font-size:2.6rem;font-weight:800;background:rgba(255,255,255,.15);border-radius:50%;width:86px;height:86px;display:flex;align-items:center;justify-content:center}
+.qtext{font-size:2rem;font-weight:800;text-align:center;margin:14px 0 24px;word-break:break-word}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1;align-content:stretch}
+.optgrid.two{grid-template-columns:1fr}
+.opt{border-radius:14px;color:#fff;font-weight:700;display:flex;align-items:center;gap:16px;padding:20px 24px;font-size:1.5rem;min-height:96px;position:relative}
+.opt .shape{font-size:2.2rem}
+.opt.dim{opacity:.35}
+.opt .cnt{margin-left:auto;background:rgba(0,0,0,.28);border-radius:10px;padding:6px 14px;font-size:1.2rem}
+.opt .check{position:absolute;top:-12px;right:-6px;font-size:2rem}
+.answered{text-align:center;font-size:1.3rem;font-weight:700;margin-top:14px}
+.rankrow{width:100%;max-width:640px;background:rgba(255,255,255,.14);border-radius:12px;padding:16px 24px;display:flex;justify-content:space-between;font-weight:700;font-size:1.4rem}
+.rankrow .pos{width:52px}
+.podium{display:flex;gap:18px;align-items:flex-end;justify-content:center;margin:10px 0 20px}
+.pcol{background:rgba(255,255,255,.16);border-radius:14px 14px 0 0;width:200px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:14px;gap:6px}
+.pcol .medal{font-size:2.6rem}
+.pcol .nm{font-weight:800;font-size:1.3rem;word-break:break-word;text-align:center}
+.pcol .sc{font-weight:600;opacity:.9}
+.h1st{height:250px}.h2nd{height:200px}.h3rd{height:160px}
+.list{max-height:26vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;align-items:center;width:100%}
+.hint{opacity:.7;font-size:.95rem}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const COLORS = ['#e21b3c','#1368ce','#d89e00','#26890c'];
+const SHAPES = ['▲','◆','●','■'];
+const app = document.getElementById('app');
+let info = null, lastKey = '', timerInt = null, deadline = 0;
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function stopTimer(){if(timerInt){clearInterval(timerInt);timerInt=null}}
+function getPin(){
+  let pin = localStorage.getItem('quiz_pin') || '';
+  if(!pin){
+    pin = prompt('PIN do apresentador (padrão: 1234):') || '';
+    localStorage.setItem('quiz_pin', pin);
+  }
+  return pin;
+}
+async function action(a){
+  const r = await fetch('/api/game',{method:'POST',headers:{'Content-Type':'application/json','x-pin':getPin()},body:JSON.stringify({action:a})});
+  const d = await r.json();
+  if(!d.ok && d.pin){ localStorage.removeItem('quiz_pin'); alert('PIN incorreto. Tente novamente.'); return; }
+  if(!d.ok && d.error) alert(d.error);
+}
+function clearPlayers(){
+  if(confirm('Remover TODOS os jogadores do lobby? Quem estiver com a página aberta terá que entrar de novo.')) action('clearplayers');
+}
+
+function qrHtml(url){
+  try{
+    const qr = qrcode(0,'M');
+    qr.addData(url); qr.make();
+    if(qr.createSvgTag) return qr.createSvgTag({cellSize:8, margin:2, scalable:true});
+    return qr.createImgTag(8,8);
+  }catch(e){ return '<div style="color:#c00">Erro ao gerar QR</div>'; }
+}
+
+function startTimer(remaining, duration){
+  stopTimer();
+  deadline = Date.now() + remaining;
+  timerInt = setInterval(()=>{
+    const left = Math.max(0, deadline - Date.now());
+    const t = document.getElementById('timer');
+    if(t) t.textContent = Math.ceil(left/1000);
+    if(left<=0) stopTimer();
+  },100);
+}
+
+function render(s){
+  const key = [s.state, s.question?s.question.index:'', s.reveal?s.reveal.index:'', s.index].join('|');
+
+  /* atualizações dinâmicas sem redesenhar tudo */
+  if(key===lastKey){
+    if(s.state==='lobby'){
+      const pl = document.getElementById('plist');
+      const ct = document.getElementById('pcount');
+      if(pl) pl.innerHTML = (s.players||[]).map(n=>`<div class="chip">${esc(n)}</div>`).join('');
+      if(ct) ct.textContent = s.playerCount;
+    }
+    if(s.state==='question'){
+      const a = document.getElementById('acount');
+      if(a) a.textContent = s.answeredCount + ' de ' + s.playerCount + ' responderam';
+    }
+    return;
+  }
+  lastKey = key;
+
+  if(s.state==='lobby'){
+    stopTimer();
+    const url = info ? info.playerUrl : window.location.origin + '/';
+    app.innerHTML = `
+      <div class="center" style="gap:10px"><h1>🎉 Quiz ao Vivo</h1>
+        <div class="sub">Aponte a câmera do celular para o QR Code e entre no jogo</div></div>
+      <div class="lobby">
+        <div class="qrbox">${qrHtml(url)}<div class="url">${esc(url)}</div></div>
+        <div class="center" style="flex:0 1 auto;gap:14px">
+          <div class="count"><span id="pcount">${s.playerCount}</span> jogador(es)</div>
+          <div class="players" id="plist">${(s.players||[]).map(n=>`<div class="chip">${esc(n)}</div>`).join('')}</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="primary" onclick="action('start')">▶ Iniciar Quiz (${s.questionCount} pergunta${s.questionCount===1?'':'s'})</button>
+        <button class="ghost" onclick="window.open('/admin','_blank')">✏ Editar perguntas</button>
+        <button class="ghost" onclick="clearPlayers()">🧹 Zerar jogadores</button>
+      </div>
+      <div class="hint" style="text-align:center;margin-top:8px">Os celulares precisam estar no mesmo Wi-Fi deste computador.</div>`;
+    return;
+  }
+
+  if(s.state==='question'){
+    const q = s.question;
+    const two = q.options.length>2?'':' two';
+    app.innerHTML = `
+      <div class="topbar"><span>Pergunta ${q.index+1} de ${q.total}</span>
+        <div class="timer" id="timer">${Math.ceil(q.remaining/1000)}</div></div>
+      <div class="qtext">${esc(q.text)}</div>
+      <div class="optgrid${two}">
+        ${q.options.map((o,i)=>`<div class="opt" style="background:${COLORS[i]}">
+          <span class="shape">${SHAPES[i]}</span><span>${esc(o)}</span></div>`).join('')}
+      </div>
+      <div class="answered" id="acount">${s.answeredCount} de ${s.playerCount} responderam</div>
+      <div class="controls"><button class="ghost" onclick="action('reveal')">⏭ Encerrar pergunta agora</button></div>`;
+    startTimer(q.remaining, q.duration);
+    return;
+  }
+
+  if(s.state==='reveal'){
+    stopTimer();
+    const r = s.reveal;
+    const two = r.options.length>2?'':' two';
+    app.innerHTML = `
+      <div class="topbar"><span>Pergunta ${r.index+1} de ${r.total}</span><span>Resposta correta</span></div>
+      <div class="qtext">${esc(r.text)}</div>
+      <div class="optgrid${two}">
+        ${r.options.map((o,i)=>`<div class="opt${i===r.correct?'':' dim'}" style="background:${COLORS[i]}">
+          <span class="shape">${SHAPES[i]}</span><span>${esc(o)}</span>
+          <span class="cnt">${r.counts[i]} voto${r.counts[i]===1?'':'s'}</span>
+          ${i===r.correct?'<span class="check">✅</span>':''}</div>`).join('')}
+      </div>
+      <div class="controls"><button class="primary" onclick="action('ranking')">🏆 Mostrar Ranking</button></div>`;
+    return;
+  }
+
+  if(s.state==='ranking'){
+    stopTimer();
+    const medals=['🥇','🥈','🥉','4º','5º'];
+    const top5 = (s.ranking||[]).slice(0,5).map((r,i)=>
+      `<div class="rankrow"><span><span class="pos">${medals[i]||r.pos+'º'}</span>${esc(r.name)}</span><span>${r.score} pts</span></div>`).join('');
+    app.innerHTML = `
+      <div class="center">
+        <h2>🏆 Ranking parcial</h2>
+        <div class="list" style="max-height:none">${top5||'<div class="sub">Nenhum jogador ainda</div>'}</div>
+      </div>
+      <div class="controls">
+        <button class="primary" onclick="action('next')">${s.isLast?'🎉 Resultado Final':'▶ Próxima Pergunta'}</button>
+      </div>`;
+    return;
+  }
+
+  if(s.state==='final'){
+    stopTimer();
+    const rk = s.ranking||[];
+    const medals=['🥇','🥈','🥉'];
+    const col = (i,cls)=> rk[i]?`<div class="pcol ${cls}"><span class="medal">${medals[i]}</span>
+      <span class="nm">${esc(rk[i].name)}</span><span class="sc">${rk[i].score} pts</span></div>`:'';
+    const rest = rk.slice(3).map(r=>
+      `<div class="rankrow"><span><span class="pos">${r.pos}º</span>${esc(r.name)}</span><span>${r.score} pts</span></div>`).join('');
+    app.innerHTML = `
+      <div class="center" style="gap:8px">
+        <h1>🏁 Resultado Final</h1>
+        <div class="podium">${col(1,'h2nd')}${col(0,'h1st')}${col(2,'h3rd')}</div>
+        <div class="list">${rest}</div>
+      </div>
+      <div class="controls">
+        <button class="primary" onclick="action('reset')">🔄 Novo jogo</button>
+      </div>`;
+    return;
+  }
+}
+
+/* ---------- Início ---------- */
+fetch('/api/info').then(r=>r.json()).then(d=>{
+  info = d; lastKey='';
+  const es = new EventSource('/events');
+  es.onmessage = e => render(JSON.parse(e.data));
+});
+</script>
+</body>
+</html>

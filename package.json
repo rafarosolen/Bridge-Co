@@ -1,20 +1,12 @@
 {
-  "name": "bridge-automation-quiz",
-  "private": true,
+  "name": "quiz-ao-vivo",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Quiz ao vivo estilo Kahoot com QR Code, pontuação e ranking",
+  "main": "server.js",
   "scripts": {
-    "dev": "node server.js",
-    "build": "vite build",
     "start": "node server.js"
   },
-  "dependencies": {
-    "express": "^5.1.0",
-    "qrcode": "^1.5.4",
-    "socket.io": "^4.8.1",
-    "socket.io-client": "^4.8.1"
-  },
-  "devDependencies": {
-    "vite": "^7.0.0"
+  "engines": {
+    "node": ">=18"
   }
 }
